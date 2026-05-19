@@ -50,7 +50,7 @@ El monitoreo de la calidad del aire en Lima utiliza diversas tecnologías:
 
 ## Disponibilidad de Datos
 
-Los datos provienen del **SENAMHI** a través del portal de datos abiertos del MINAM (SINIA). El dataset contiene mediciones horarias de 7 estaciones de monitoreo en Lima Metropolitana, entre 2015 y 2024, en formato CSV descargable libremente.
+Los datos provienen del **SENAMHI** a través del portal de datos abiertos del MINAM (SINIA). El dataset contiene mediciones horarias de 7 estaciones de monitoreo en Lima Metropolitana, entre 2015 y 2024, en formato CSV descargable libremente. (<https://www.datosabiertos.gob.pe/dataset/monitoreo-de-los-contaminantes-del-aire-en-lima-metropolitana-servicio-nacional-de>)
 
 ## Bibliografía
 
