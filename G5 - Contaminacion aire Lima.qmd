@@ -56,6 +56,8 @@ Los datos provienen del **SENAMHI** a través del portal de datos abiertos del M
 
 Duarte, M. (2024, agosto 16). Lima es la ciudad más contaminada de América Latina: 4 enfermedades relacionadas a la polución ambiental. *El Comercio*. https://elcomercio.pe/bienestar/salud-fisica/lima-es-la-ciudad-mas-contaminada-de-america-latina-4-enfermedades-relacionadas-a-la-polucion-ambiental-asma-alzheimer-dermatitis-depresion-noticia/
 
+Organización Mundial de la Salud. (2021). *WHO global air quality guidelines: particulate matter (PM2.5 and PM10), ozone, nitrogen dioxide, sulfur dioxide and carbon monoxide*. <https://iris.who.int/bitstream/handle/10665/345329/9789240034228-eng.pdf>
+
 ------------------------------------------------------------------------
 
 # Carga y Exploración de la Base de Datos
@@ -69,8 +71,12 @@ La base de datos contiene **`r nrow(DF)` registros** y **`r ncol(DF)` variables*
 
 ## Variables del Dataset
 
+```{r}
+names(DF)
+```
+
 | Variable | Descripción | Tipo |
-|----|----|----|
+|------------------------|------------------------------|------------------|
 | ESTACION | Nombre de la estación de monitoreo | Cualitativa nominal |
 | FECHA | Fecha de medición (YYYYMMDD) | Cuantitativa discreta |
 | HORA | Hora de medición | Cuantitativa discreta |
@@ -82,11 +88,13 @@ La base de datos contiene **`r nrow(DF)` registros** y **`r ncol(DF)` variables*
 ## Verificación de Datos Faltantes
 
 ```{r}
-cat("Total de celdas vacías (NA):", sum(is.na(DF)), "\n")
+print(paste("Total de celdas vacías (NA):", sum(is.na(DF))))
 ```
 
 ```{r}
-cat("NA por columna:\n")
+print(paste("Total de celdas vacías (NA):", sum(is.na(DF))))
+
+print("NA por columna:")
 apply(is.na(DF), 2, sum)
 ```
 
@@ -105,7 +113,7 @@ summary(DF[, c("PM10", "PM2_5", "NO2")])
 ```
 
 ```{r}
-# Gráfico de contaminantes promedio por estación
+# Gráfico de contaminantes promedio por estacion
 DF_limpio <- DF %>% drop_na(PM10, PM2_5, NO2)
 
 promedios <- DF_limpio %>%
@@ -132,7 +140,7 @@ ggplot(promedios_long, aes(x = ESTACION, y = Promedio, fill = Contaminante)) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1))
 ```
 
-**Interpretación:** Carabayllo y San Juan de Lurigancho presentan los mayores promedios de PM2.5 y PM10, lo que refleja la mayor actividad vehicular e industrial en zonas periféricas del norte y este de Lima. San Borja, zona residencial, muestra valores consistentemente menores.
+**Interpretación:** **San Juan de Lurigancho** y **Santa Anita** presentan los mayores promedios de PM2.5, mientras que los niveles más críticos de PM10 se concentran en **Villa María del Triunfo**, seguido por San Juan de Lurigancho y Carabayllo. Esto refleja el impacto de la actividad vehicular, comercial e industrial, así como las condiciones del suelo y geografía en las zonas periféricas del norte, este y sur de Lima. En contraste, **San Borja** y **Campo de Marte** muestran valores consistentemente menores, alineados con su perfil más residencial y céntrico.
 
 ```{r}
 # Evolución temporal del PM2.5 (promedio mensual)
@@ -170,7 +178,7 @@ Se considera la base de datos como la **población de estudio**. Se usará un ni
 Primero calculamos $\mu$ y $\sigma$ de cada variable cuantitativa, y $\pi$ para la variable cualitativa de interés.
 
 ```{r}
-# Parámetros poblacionales de variables cuantitativas
+# Parametros poblacionales de variables cuantitativas
 mu_PM10  <- mean(DF$PM10,  na.rm = TRUE)
 mu_PM25  <- mean(DF$PM2_5, na.rm = TRUE)
 mu_NO2   <- mean(DF$NO2,   na.rm = TRUE)
@@ -179,21 +187,53 @@ sigma_PM10 <- sd(DF$PM10,  na.rm = TRUE)
 sigma_PM25 <- sd(DF$PM2_5, na.rm = TRUE)
 sigma_NO2  <- sd(DF$NO2,   na.rm = TRUE)
 
-cat("=== Parámetros poblacionales ===\n")
-cat("PM10:  mu =", round(mu_PM10, 4),  " | sigma =", round(sigma_PM10, 4), "\n")
-cat("PM2_5: mu =", round(mu_PM25, 4),  " | sigma =", round(sigma_PM25, 4), "\n")
-cat("NO2:   mu =", round(mu_NO2,  4),  " | sigma =", round(sigma_NO2,  4), "\n")
+print("Parámetros Poblacionales:")
+print(paste("PM10:  mu =", round(mu_PM10, 4),  " | sigma =", round(sigma_PM10, 4)))
+print(paste("PM2_5: mu =", round(mu_PM25, 4),  " | sigma =", round(sigma_PM25, 4)))
+print(paste("NO2:   mu =", round(mu_NO2,  4),  " | sigma =", round(sigma_NO2,  4)))
 ```
+
+## Niveles de referencia de la OMS (2021) para concentraciones de contaminantes atmosféricos
+
+Estos son los valores límites recomendados por la OMS (2021) utilizados como referencia para la evaluación de contaminantes:
+
+| Contaminante | Promedio 24 horas (OMS 2021) | Promedio anual (OMS 2021) |
+|--------------|------------------------------|---------------------------|
+| PM$_{2.5}$   | 15 µg/m$^3$                  | 5 µg/m$^3$                |
+| PM$_{10}$    | 45 µg/m$^3$                  | 15 µg/m$^3$               |
+| NO$_2$       | 25 µg/m$^3$                  | 10 µg/m$^3$               |
+
+Estos valores serán útiles, ya que en los siguientes problemas se utilizará el valor guía de la Organización Mundial de la Salud (OMS) para la concentración de PM2.5 como límite de referencia.
+
+A continuación, se calcula la primera proporción poblacional, correspondiente a la fracción de registros en los que la concentración de PM2.5 supera el valor guía de la OMS para un promedio de 24 horas ($15µg/m^3$ )
 
 ```{r}
-# Proporción poblacional: registros donde PM2.5 supera el límite OMS (25 µg/m³)
+# Proporción poblacional
 total_PM25 <- sum(!is.na(DF$PM2_5))
-excede_OMS <- sum(DF$PM2_5 > 25, na.rm = TRUE)
+excede_OMS <- sum(DF$PM2_5 > 15, na.rm = TRUE)
 pi_excede  <- excede_OMS / total_PM25
 
-cat("Registros con PM2.5 > 25 µg/m³ (límite OMS):", excede_OMS, "de", total_PM25, "\n")
-cat("Proporción poblacional pi =", round(pi_excede, 4), "\n")
+print(paste("Registros con PM2.5 > 15 µg/m³ (límite OMS):", excede_OMS, "de", total_PM25))
+print(paste("Proporción poblacional pi =", round(pi_excede, 4)))
 ```
+
+## Cálculo del E para hallar los tamaños de muestra
+
+Lo más ideal es fijar al E como un valor entre el 5 y 15% del límite normativo de referencia:
+
+| Contaminante | Límite OMS 24h | E que se va a usar | E como % del Límite | Interpretación |
+|---------------|---------------|---------------|---------------|---------------|
+| PM10 | 45 µg/m$^3$ | 5.0 µg/m$^3$ | 11% | razonable |
+| PM2.5 | 15 µg/m$^3$ | 1.5 µg/m$^3$ | 10% | razonable |
+| NO$_2$ | 25 µg/m$^3$ | 1.5 µg/m$^3$ | 6% | bastante preciso |
+
+En el caso cualitativo:
+
+| Contaminante \> 15µg/m$^3$ | Proporción Poblacional | E que se va a usar | E como % de la proporción | Interpretación |
+|---------------|---------------|---------------|---------------|---------------|
+| PM2.5 \> 15µg/m$^3$ | 0.6927 | 0.04 | 5.78% | bastante preciso |
+
+Cabe decir que en el caso cualitativo el E es adimensional
 
 ## Fórmulas del Tamaño de Muestra
 
@@ -207,27 +247,30 @@ Para **variable cualitativa**: $$n = \left(\frac{Z_{(1-\alpha/2)}}{E}\right)^2 \
 confianza  <- 0.94
 alfa       <- 1 - confianza
 Vcritico   <- qnorm(1 - alfa/2, 0, 1)
-cat("Valor crítico Z al 94% de confianza:", round(Vcritico, 4), "\n\n")
+print(paste("Valor crítico Z al 94% de confianza:", round(Vcritico, 4)))
 
 # PM10
 E_PM10  <- 5
 n_PM10  <- (Vcritico * sigma_PM10 / E_PM10)^2
-cat("PM10  | sigma =", round(sigma_PM10,4), "| E =", E_PM10, "| n =", ceiling(n_PM10), "\n")
+print(paste("PM10  | sigma =", round(sigma_PM10,4), "| E =", E_PM10, "| n =", ceiling(n_PM10)))
 
 # PM2.5
 E_PM25  <- 1.5
 n_PM25  <- (Vcritico * sigma_PM25 / E_PM25)^2
-cat("PM2_5 | sigma =", round(sigma_PM25,4), "| E =", E_PM25, "| n =", ceiling(n_PM25), "\n")
+
+print(paste("PM2_5 | sigma =", round(sigma_PM25,4), "| E =", E_PM25, "| n =", ceiling(n_PM25)))
 
 # NO2
 E_NO2   <- 1.5
 n_NO2   <- (Vcritico * sigma_NO2  / E_NO2)^2
-cat("NO2   | sigma =", round(sigma_NO2, 4), "| E =", E_NO2, "| n =", ceiling(n_NO2),  "\n")
 
-# Variable cualitativa: proporción PM2.5 > 25
-E_prop  <- 0.045
+print(paste("NO2   | sigma =", round(sigma_NO2, 4), "| E =", E_NO2, "| n =", ceiling(n_NO2)))
+
+# Variable cualitativa: proporcion PM2.5 > 15
+E_prop  <- 0.043
 n_prop  <- pi_excede * (1 - pi_excede) * (Vcritico / E_prop)^2
-cat("Prop. PM2.5>25 | pi =", round(pi_excede,4), "| E =", E_prop, "| n =", ceiling(n_prop), "\n")
+
+print(paste("Prop. PM2.5 > 15 | pi =", round(pi_excede,4), "| E =", E_prop, "| n =", ceiling(n_prop)))
 ```
 
 ## Resumen del Tamaño de Muestra
@@ -237,66 +280,73 @@ cat("Prop. PM2.5>25 | pi =", round(pi_excede,4), "| E =", E_prop, "| n =", ceili
 | PM10              | Cuantitativa | 46.5913          | 5.0 µg/m³        | 308 |
 | PM2.5             | Cuantitativa | 15.8274          | 1.5 µg/m³        | 394 |
 | NO2               | Cuantitativa | 14.9418          | 1.5 µg/m³        | 351 |
-| PM2.5 \> 25 µg/m³ | Cualitativa  | 0.3619           | 0.045            | 404 |
+| PM2.5 \> 15 µg/m³ | Cualitativa  | 0.6927           | 0.043            | 408 |
 
-$$\text{Tamaño de muestra} = \max\{308,\; 394,\; 351,\; 404\} = \boxed{404}$$
+$$\text{Tamaño de muestra} = \max\{308,\; 394,\; 351,\; 408\} = \boxed{408}$$
 
 ```{r}
 n_final <- max(ceiling(n_PM10), ceiling(n_PM25), ceiling(n_NO2), ceiling(n_prop))
-cat("Tamaño de muestra final n =", n_final, "\n")
+print(paste("Tamaño de muestra final n =", n_final))
 ```
 
-> **Para todo el proyecto se usará** $n = 404$.
+> **Para todo el proyecto se usará** $n = 408$.
 
 ------------------------------------------------------------------------
 
 # PARTE 2: Distribuciones Muestrales
 
-Se considera la base de datos completa como la **población**. A partir de sus parámetros ($\mu$, $\sigma$, $\pi$) se calculan probabilidades usando distribuciones muestrales, considerando muestras de tamaño $n = 404$.
+Se considera la base de datos completa como la **población**. A partir de sus parámetros ($\mu$, $\sigma$, $\pi$) se calculan probabilidades usando distribuciones muestrales, considerando muestras de tamaño $n = 408$.
 
-Como $n = 404 > 30$, se puede aplicar el **Teorema del Límite Central (TLC)** para las medias muestrales.
+Como $n = 408 > 30$, se puede aplicar el **Teorema del Límite Central (TLC)** para las medias muestrales.
 
 ------------------------------------------------------------------------
 
 ## CASO DE ESTUDIO 1: Distribución de la Media Muestral de PM2.5
 
-La OMS establece que la concentración anual de PM2.5 no debe superar **15 µg/m³** y la guía diaria es **25 µg/m³**. El promedio poblacional en Lima es $\mu = 24.2073$ µg/m³.
+La OMS establece que la concentración anual de PM2.5 no debe superar **5 µg/m³** y la guía diaria es **15 µg/m³**. El promedio poblacional en Lima es $\mu = 24.2073$ µg/m³.
 
-**Situación:** Se selecciona una muestra de $n = 404$ registros horarios de las estaciones de Lima. ¿Cuál es la probabilidad de que la **concentración media de PM2.5 en esa muestra** supere los **25 µg/m³** (límite diario OMS)?
+**Situación:** Se selecciona una muestra de $n = 408$ registros horarios de las estaciones de Lima. ¿Cuál es la probabilidad de que la **concentración media de PM2.5 en esa muestra** supere los **15 µg/m³** (límite diario OMS)?
 
 **Solución:**
 
-$n = 404 > 30$ ⟹ Se usa el **TLC**: $$\overline{x} \rightarrow N\left(\mu,\; \frac{\sigma}{\sqrt{n}}\right)$$
+$n = 408 > 30$ ⟹ Se usa el **TLC**: $$\overline{x} \rightarrow N\left(\mu,\; \frac{\sigma}{\sqrt{n}}\right)$$
 
-$\mu = 24.2073$, $\sigma = 15.8274$, $\frac{\sigma}{\sqrt{n}} = \frac{15.8274}{\sqrt{404}} = 0.7874$
+$\mu = 24.2073$, $\sigma = 15.8274$, $\frac{\sigma}{\sqrt{n}} = \frac{15.8274}{\sqrt{408}} = 0.7836$
 
-Se pide: $P(\overline{x} > 25)$
+Se pide: $P(\overline{x} > 15)$
 
 ```{r}
-# Usando Código 1 adaptado: media y desviación de la media muestral
-n       <- 404
+# Usando Codigo 1 adaptado: media y desviacion de la media muestral
+n       <- 408
 mu_pob  <- 24.2073
 sigma   <- 15.8274
 
 desv_xbarra <- sigma / sqrt(n)
-cat("Media de x_barra:     mu =", mu_pob, "\n")
-cat("Desviación de x_barra:", round(desv_xbarra, 4), "\n")
+print(paste("Media de x_barra: mu =", mu_pob))
+print(paste("Desviación de x_barra:", round(desv_xbarra, 4)))
 ```
+
+```{r}
+P_caso1 <- pnorm(15, mu_pob, desv_xbarra, lower.tail = FALSE)
+cat("P(x_barra > 15) =", round(P_caso1, 4))
+```
+
+¿Cuál es la probabilidad de que la **concentración media de PM2.5 en esa muestra** supere los **25 µg/m³**?
 
 ```{r}
 P_caso1 <- pnorm(25, mu_pob, desv_xbarra, lower.tail = FALSE)
 cat("P(x_barra > 25) =", round(P_caso1, 4))
 ```
 
-**Interpretación:** Existe una probabilidad de aproximadamente **`r round(P_caso1*100,2)`%** de que la concentración media de PM2.5, en una muestra de 404 registros, supere el límite diario de la OMS (25 µg/m³). Esto refleja que Lima se encuentra frecuentemente cerca o por encima de dicho límite, lo cual representa un riesgo real para la salud respiratoria de la población.
+**Interpretación:** Existe una probabilidad del **15.70%** de que la concentración media de PM2.5 en una muestra de **408** registros supere los $25\text{ }\mu\text{g/m}^3$. Al contrastar esto con el hecho de que es matemáticamente seguro que cualquier muestra superará el límite anual de la OMS ($P(\bar{x} > 15) = 1$), se evidencia la gravedad de la situación en Lima Metropolitana: el aire no solo incumple siempre los estándares internacionales de salud, sino que mantiene una tendencia constante a alcanzar picos de contaminación aún más severos.
 
 ------------------------------------------------------------------------
 
 ## CASO DE ESTUDIO 2: Distribución de la Proporción Muestral
 
-El **36.19%** de todos los registros de PM2.5 en Lima superan los 25 µg/m³ (límite OMS). Es decir, $\pi = 0.3619$.
+El **69.27%** de todos los registros de PM2.5 en Lima superan los 15 µg/m³ (límite OMS). Es decir, $\pi = 0.6927$.
 
-**Situación:** Se toma una muestra de $n = 404$ registros. ¿Cuál es la probabilidad de que la **proporción muestral** de registros que superan el límite OMS sea **a lo más 30%**?
+**Situación:** Se toma una muestra de $n = 408$ registros. ¿Cuál es la probabilidad de que la **proporción muestral** de registros que superan el límite OMS sea **a lo más 70%**?
 
 **Solución:**
 
@@ -304,25 +354,25 @@ La proporción muestral sigue una distribución Normal: $$p \sim N\left(\pi,\; \
 
 ```{r}
 # Código 1 para proporciones
-n    <- 404
-pi_p <- 0.3619
+n    <- 408
+pi_p <-0.6927
 
 sigma_p <- sqrt(pi_p * (1 - pi_p) / n)
 media_p <- pi_p
 
-cat("usando Código 1, para una proporción:\n")
-cat("la media es", round(media_p, 4), "\n")
-cat("la desviación es", round(sigma_p, 4), "\n")
+print("usando Código 1, para una proporción:")
+print(paste("la media es", round(media_p, 4)))
+print(paste("la desviación es", round(sigma_p, 4)))
 ```
 
-Se pide: $P(p \leq 0.30)$
+Se pide: $P(p \leq 0.70)$
 
 ```{r}
-P_caso2 <- pnorm(0.30, media_p, sigma_p)
-cat("P(p <= 0.30) =", round(P_caso2, 4))
+P_caso2 <- pnorm(0.70, media_p, sigma_p)
+print(paste("P(p <= 0.70) =", round(P_caso2, 4)))
 ```
 
-**Interpretación:** La probabilidad de que en una muestra de 404 registros la proporción de mediciones que exceden el límite OMS sea a lo más 30%, es de **`r round(P_caso2*100,2)`%**. Como este valor es bajo, es poco probable que una muestra represente un escenario más favorable que el real. Esto confirma que la contaminación por PM2.5 en Lima supera consistentemente los estándares internacionales.
+**Interpretación:** La probabilidad de que, en una muestra aleatoria de 408 registros, la proporción de mediciones que exceden el límite de la OMS sea a lo más del 70%, es de **62.54%**. Al ser una probabilidad moderadamente alta, existe una posibilidad significativa de que la muestra refleje niveles de contaminación críticamente elevados. Esto refuerza la evidencia de que la contaminación por PM2.5 en Lima supera de manera persistente los estándares internacionales de salud ambiental.
 
 ------------------------------------------------------------------------
 
@@ -330,67 +380,67 @@ cat("P(p <= 0.30) =", round(P_caso2, 4))
 
 La varianza poblacional del PM10 en Lima es $\sigma^2 = (46.5913)^2 = 2170.75$ (µg/m³)².
 
-**Situación:** Un organismo de fiscalización ambiental selecciona una muestra de $n = 404$ registros de PM10 para evaluar la dispersión de las mediciones. ¿Cuál es la probabilidad de que la **varianza muestral** $S^2$ sea como máximo 2500 (µg/m³)²?
+**Situación:** Un organismo de fiscalización ambiental selecciona una muestra de $n = 408$ registros de PM10 para evaluar la dispersión de las mediciones. ¿Cuál es la probabilidad de que la **varianza muestral** $S^2$ sea como máximo 2500 (µg/m³)²?
 
 **Solución:**
 
 $$\frac{(n-1)S^2}{\sigma^2} \sim \chi^2(n-1)$$
 
-Se pide: $P(S^2 \leq 2500) = P\left(\chi^2(403) \leq \frac{403 \times 2500}{2170.75}\right)$
+Se pide: $P(S^2 \leq 2500) = P\left(\chi^2(407) \leq \frac{407 \times 2500}{2170.75}\right)$
 
 ```{r}
-n_c3    <- 404
+n_c3    <- 408
 sigma2  <- 46.5913^2
 S2_max  <- 2500
 
 chi2_val <- (n_c3 - 1) * S2_max / sigma2
-cat("Valor chi-cuadrado calculado:", round(chi2_val, 4), "\n")
-cat("Grados de libertad:", n_c3 - 1, "\n")
+print(paste("Valor chi-cuadrado calculado:", round(chi2_val, 4)))
+print(paste("Grados de libertad:", n_c3 - 1))
 ```
 
 ```{r}
 P_caso3 <- pchisq(chi2_val, df = n_c3 - 1)
-cat("P(S^2 <= 2500) =", round(P_caso3, 4))
+print(paste("P(S^2 <= 2500) =", round(P_caso3, 4)))
 ```
 
 **Interpretación:** La probabilidad de que la varianza muestral de PM10 sea como máximo 2500 (µg/m³)² es de **`r round(P_caso3*100,2)`%**. Dado que la varianza poblacional ya es 2170.75, es razonablemente probable que una muestra produzca una varianza similar o inferior a ese umbral, lo cual es consistente con la alta dispersión inherente de las mediciones de PM10 en Lima.
+
+La probabilidad de que la varianza muestral de PM10 sea como máximo de $2500 \text{ }(\mu\text{g/m}^3)^2$ es de **98.15%**. Dado que la varianza poblacional de referencia es de $2170.75 \text{ }(\mu\text{g/m}^3)^2$, este resultado indica que es altamente probable que cualquier muestra aleatoria presente una dispersión similar o inferior a dicho umbral. Esto demuestra que, a pesar de la alta variabilidad típica del PM10 en Lima, los resultados de las muestras son bastante estables y se mantienen dentro de lo previsto históricamente.
 
 ------------------------------------------------------------------------
 
 # PARTE 3: Intervalos de Confianza
 
-Para esta parte se selecciona una **muestra aleatoria de tamaño** $n = 404$ de los registros que no tienen valores faltantes en PM10, PM2.5 y NO2. Se usará un nivel de confianza del **94%** ($\alpha = 0.06$).
+Para esta parte se selecciona una **muestra aleatoria de tamaño** $n = 408$ de los registros que no tienen valores faltantes en PM10, PM2.5 y NO2. Se usará un nivel de confianza del **94%** ($\alpha = 0.06$).
 
 ## Selección de la Muestra
 
 ```{r}
-# Primero, eliminar filas con NA en las variables de interés
+# Primero, eliminamos las filas con NA en las variables de interés
 DF_limpio2 <- DF %>% drop_na(PM10, PM2_5, NO2)
-cat("Registros sin NA en PM10, PM2_5 y NO2:", nrow(DF_limpio2), "\n")
+print(paste("Registros sin NA en PM10, PM2_5 y NO2:", nrow(DF_limpio2)))
 ```
 
 ```{r}
-# Seleccionar muestra de tamaño 404 sin reposición
-# (ejecutar una sola vez y luego guardar)
+# Seleccionar muestra de tamaño 408 sin reposición
 set.seed(2024)
-n_muestra <- 404
+n_muestra <- 408
 muestra <- sample_n(DF_limpio2, n_muestra, replace = FALSE)
-cat("Tamaño de la muestra:", nrow(muestra), "\n")
+print(paste("Tamaño de la muestra:", nrow(muestra)))
 ```
 
 ```{r}
 # Estadísticas de la muestra
-cat("=== Estadísticas de la muestra ===\n")
-cat("PM10:  media muestral =", round(mean(muestra$PM10), 4),
-    " | s =", round(sd(muestra$PM10), 4), "\n")
-cat("PM2_5: media muestral =", round(mean(muestra$PM2_5), 4),
-    " | s =", round(sd(muestra$PM2_5), 4), "\n")
-cat("NO2:   media muestral =", round(mean(muestra$NO2),  4),
-    " | s =", round(sd(muestra$NO2),  4), "\n")
+print("Estadísticas de la muestra:")
+print(paste("PM10: media muestral =", round(mean(muestra$PM10), 4), "| s =", round(sd(muestra$PM10), 4)))
 
-# Proporción muestral: registros con PM2.5 > 25
-p_muestral <- mean(muestra$PM2_5 > 25)
-cat("Proporción muestral PM2.5 > 25:", round(p_muestral, 4), "\n")
+print(paste("PM2_5: media muestral =", round(mean(muestra$PM2_5), 4), "| s =", round(sd(muestra$PM2_5), 4)))
+
+print(paste("NO2: media muestral =", round(mean(muestra$NO2), 4), "| s =", round(sd(muestra$NO2), 4)))
+
+# Proporción muestral: registros con PM2.5 > 15
+p_muestral <- mean(muestra$PM2_5 > 15)
+print(paste("Proporción muestral PM2.5 > 15:", round(p_muestral, 4)))
 ```
 
 ------------------------------------------------------------------------
@@ -408,11 +458,11 @@ La desviación estándar poblacional es $\sigma_{PM2.5} = 15.8274$ µg/m³ (calc
 ```{r}
 n_ic1          <- nrow(muestra)
 media_muestral <- mean(muestra$PM2_5)
-sigma_conocida <- 15.8274   # desviación poblacional
+sigma_conocida <- 15.8274   # desviacion poblacional
 
-cat("el tamaño de muestra es:", n_ic1, "\n")
-cat("la media muestral es:", round(media_muestral, 4), "\n")
-cat("la desviación poblacional (sigma) es:", sigma_conocida, "\n")
+print(paste("el tamaño de muestra es:", n_ic1))
+print(paste("la media muestral es:", round(media_muestral, 4)))
+print(paste("la desviación poblacional (sigma) es:", sigma_conocida))
 ```
 
 **2) Intervalo de confianza de la media (σ conocido):**
@@ -426,33 +476,33 @@ margen_de_error  <- z_critico * error_estandar
 extremo_inferior <- media_muestral - margen_de_error
 extremo_superior <- media_muestral + margen_de_error
 
-cat("Nivel de significación:", alpha, "\n")
-cat("Error estándar:", round(error_estandar, 4), "\n")
-cat("Z crítico:", round(z_critico, 4), "\n")
-cat("Margen de error o Tolerancia:", round(margen_de_error, 4), "\n")
-cat("IC: (", round(extremo_inferior, 4), ";", round(extremo_superior, 4), ")\n")
+print(paste("Nivel de significación:", alpha))
+print(paste("Error estándar:", round(error_estandar, 4)))
+print(paste("Z crítico:", round(z_critico, 4)))
+print(paste("Margen de error o Tolerancia:", round(margen_de_error, 4)))
+print(paste("IC: (", round(extremo_inferior, 4), ";", round(extremo_superior, 4), ")"))
 ```
 
-**Interpretación:** Con **94% de confianza** se estima que la concentración media de PM2.5 en Lima Metropolitana está comprendida entre **`r round(extremo_inferior,2)` µg/m³** y **`r round(extremo_superior,2)` µg/m³**. Dado que ambos extremos superan el límite anual de la OMS (15 µg/m³), se puede afirmar con alta confianza que Lima supera consistentemente los estándares internacionales de calidad del aire.
+**Interpretación:** Con un **94% de confianza**, se estima que la concentración promedio de PM2.5 en Lima Metropolitana se encuentra entre **22.36** $\mu\text{g/m}^3$ y **25.31** $\mu\text{g/m}^3$. Como ambos extremos del intervalo superan el límite anual de la OMS ($15\text{ }\mu\text{g/m}^3$), se confirma que la calidad del aire en la ciudad excede de manera preocupante y sistemática los estándares internacionales.
 
 ------------------------------------------------------------------------
 
 ## INTERVALO DE CONFIANZA 2: IC para la Proporción de Registros que Superan el Límite OMS
 
-Se construye un IC al 94% para la **proporción poblacional (**$\pi$) de registros de PM2.5 que superan los 25 µg/m³ (límite diario OMS).
+Se construye un IC al 94% para la **proporción poblacional (**$\pi$) de registros de PM2.5 que superan los 15 µg/m³ (límite diario OMS).
 
 **Fórmula:** $$p - Z_{1-\frac{\alpha}{2}}\sqrt{\frac{p(1-p)}{n}} < \pi < p + Z_{1-\frac{\alpha}{2}}\sqrt{\frac{p(1-p)}{n}}$$
 
 **1) Ingreso de datos:**
 
 ```{r}
-p_ic2 <- mean(muestra$PM2_5 > 25)   # proporción muestral
+p_ic2 <- mean(muestra$PM2_5 > 15)   # proporción muestral
 n_ic2 <- nrow(muestra)
 nc_ic2 <- 0.94
 
-cat("el tamaño de muestra es:", n_ic2, "\n")
-cat("el nivel de confianza es:", nc_ic2, "\n")
-cat("la proporción muestral es:", round(p_ic2, 4), "\n")
+print(paste("el tamaño de muestra es:", n_ic2))
+print(paste("el nivel de confianza es:", nc_ic2))
+print(paste("la proporción muestral es:", round(p_ic2, 4)))
 ```
 
 **2) Intervalo de confianza de la proporción:**
@@ -466,14 +516,14 @@ margen_p          <- z_critico_p * error_estandar_p
 extremo_inf_p     <- p_ic2 - margen_p
 extremo_sup_p     <- p_ic2 + margen_p
 
-cat("Significación:", alpha_p, "\n")
-cat("Error estándar:", round(error_estandar_p, 4), "\n")
-cat("Z crítico:", round(z_critico_p, 4), "\n")
-cat("Margen de error o Tolerancia:", round(margen_p, 4), "\n")
-cat("IC: (", round(extremo_inf_p, 4), ";", round(extremo_sup_p, 4), ")\n")
+print(paste("Significación:", alpha_p))
+print(paste("Error estándar:", round(error_estandar_p, 4)))
+print(paste("Z crítico:", round(z_critico_p, 4)))
+print(paste("Margen de error o Tolerancia:", round(margen_p, 4)))
+print(paste("IC: (", round(extremo_inf_p, 4), ";", round(extremo_sup_p, 4), ")"))
 ```
 
-**Interpretación:** Con **94% de confianza**, se estima que la proporción de registros horarios en Lima donde el PM2.5 supera el límite diario de la OMS (25 µg/m³) está comprendida entre **`r round(extremo_inf_p*100,1)`%** y **`r round(extremo_sup_p*100,1)`%**. Este resultado es alarmante: entre un tercio y más de un tercio de las mediciones horarias de toda la red de monitoreo superan el estándar internacional, lo que implica una exposición crónica de la población a niveles de contaminación perjudiciales para la salud respiratoria.
+**Interpretación:** Con un **94% de confianza**, se estima que la proporción de registros horarios en Lima donde el PM2.5 supera el límite de la OMS de $15\text{ }\mu\text{g/m}^3$ se encuentra entre el **66.1%** y el **74.6%**. Este resultado es sumamente alarmante, ya que demuestra que entre dos tercios y casi tres cuartas partes de todas las mediciones de la red de monitoreo exceden las recomendaciones internacionales, exponiendo a la población de forma crónica a niveles de contaminación nocivos para la salud respiratoria.
 
 ------------------------------------------------------------------------
 
@@ -481,10 +531,10 @@ cat("IC: (", round(extremo_inf_p, 4), ";", round(extremo_sup_p, 4), ")\n")
 
 1.  **La base de datos del SENAMHI** constituye una robusta población de más de 570,000 registros horarios de contaminantes del aire en Lima (2015–2024), siendo representativa de la realidad ambiental de la ciudad.
 
-2.  **El tamaño de muestra calculado** al 94% de confianza es $n = 404$, determinado principalmente por la varianza de la variable cualitativa (proporción de registros que exceden el límite OMS de PM2.5).
+2.  **El tamaño de muestra calculado** al 94% de confianza es $n = 408$, determinado principalmente por la varianza de la variable cualitativa (proporción de registros que exceden el límite OMS de PM2.5).
 
-3.  **Las distribuciones muestrales** confirman que Lima opera cerca del límite OMS de PM2.5: existe más de un 15% de probabilidad de que una muestra de 404 registros supere en promedio los 25 µg/m³, y solo un 2% de probabilidad de que la proporción muestral de excedencias sea menor al 30%.
+3.  **Las distribuciones muestrales** confirman la gravedad de la calidad del aire en Lima: existe una probabilidad de **62.54%** de que, en una muestra de **408** registros, la proporción de datos que superan el límite de la OMS ($15\text{ }\mu\text{g/m}^3$) sea menor o igual al 70%, reflejando escenarios recurrentes con niveles de contaminación críticamente elevados.
 
-4.  **Los intervalos de confianza** al 94% indican que la media de PM2.5 en Lima se ubica entre 21 y 25 µg/m³ aproximadamente, y que entre el 28% y el 37% de las mediciones superan el estándar diario de la OMS. Ambos resultados son estadísticamente consistentes con los parámetros poblacionales calculados ($\mu = 24.21$ µg/m³, $\pi = 36.19\%$).
+4.  **Los intervalos de confianza** al 94% indican que la concentración media de PM2.5 en Lima Metropolitana se ubica firmemente entre **22.36** $\mu\text{g/m}^3$ y 25.31 $\mu\text{g/m}^3$, y que entre el **66.1% y el 74.6%** de las mediciones horarias sobrepasan el estándar de la OMS. Ambos extremos de los intervalos superan los umbrales internacionales, demostrando una exposición crónica de la población.
 
 5.  **Limitación del análisis:** Una proporción importante de registros tiene valores faltantes (NA), lo que puede introducir sesgo si la ausencia de datos no es aleatoria. Se recomienda investigar las causas de los NA por estación y periodo.
