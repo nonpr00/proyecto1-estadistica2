@@ -119,9 +119,9 @@ DF_limpio <- DF %>% drop_na(PM10, PM2_5, NO2)
 promedios <- DF_limpio %>%
   group_by(ESTACION) %>%
   dplyr::summarise(
-    PM10_media  = mean(PM10,  na.rm = TRUE),
-    PM2_5_media = mean(PM2_5, na.rm = TRUE),
-    NO2_media   = mean(NO2,   na.rm = TRUE),
+    PM10_media  = mean(PM10,na.rm = TRUE),
+    PM2_5_media = mean(PM2_5,na.rm = TRUE),
+    NO2_media   = mean(NO2, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -147,8 +147,8 @@ ggplot(promedios_long, aes(x = ESTACION, y = Promedio, fill = Contaminante)) +
 DF_tiempo <- DF %>%
   filter(!is.na(PM2_5)) %>%
   mutate(
-    anio = as.integer(substr(as.character(FECHA), 1, 4)),
-    mes  = as.integer(substr(as.character(FECHA), 5, 6))
+    anio = as.integer(substr(as.character(FECHA),1,4)),
+    mes  = as.integer(substr(as.character(FECHA),5, 6))
   ) %>%
   group_by(anio) %>%
   summarise(PM2_5_promedio = mean(PM2_5, na.rm = TRUE))
@@ -178,7 +178,6 @@ Se considera la base de datos como la **población de estudio**. Se usará un ni
 Primero calculamos $\mu$ y $\sigma$ de cada variable cuantitativa, y $\pi$ para la variable cualitativa de interés.
 
 ```{r}
-# Parametros poblacionales de variables cuantitativas
 mu_PM10  <- mean(DF$PM10,  na.rm = TRUE)
 mu_PM25  <- mean(DF$PM2_5, na.rm = TRUE)
 mu_NO2   <- mean(DF$NO2,   na.rm = TRUE)
@@ -187,7 +186,7 @@ sigma_PM10 <- sd(DF$PM10,  na.rm = TRUE)
 sigma_PM25 <- sd(DF$PM2_5, na.rm = TRUE)
 sigma_NO2  <- sd(DF$NO2,   na.rm = TRUE)
 
-print("Parámetros Poblacionales:")
+print("Parámetros Poblacionales de las variables cuantitativas:")
 print(paste("PM10:  mu =", round(mu_PM10, 4),  " | sigma =", round(sigma_PM10, 4)))
 print(paste("PM2_5: mu =", round(mu_PM25, 4),  " | sigma =", round(sigma_PM25, 4)))
 print(paste("NO2:   mu =", round(mu_NO2,  4),  " | sigma =", round(sigma_NO2,  4)))
@@ -208,12 +207,11 @@ Estos valores serán útiles, ya que en los siguientes problemas se utilizará e
 A continuación, se calcula la primera proporción poblacional, correspondiente a la fracción de registros en los que la concentración de PM2.5 supera el valor guía de la OMS para un promedio de 24 horas ($15µg/m^3$ )
 
 ```{r}
-# Proporción poblacional
 total_PM25 <- sum(!is.na(DF$PM2_5))
 excede_OMS <- sum(DF$PM2_5 > 15, na.rm = TRUE)
 pi_excede  <- excede_OMS / total_PM25
 
-print(paste("Registros con PM2.5 > 15 µg/m³ (límite OMS):", excede_OMS, "de", total_PM25))
+print(paste("Registros con PM2.5>15 µg/m³(límite OMS):", excede_OMS, "de", total_PM25))
 print(paste("Proporción poblacional pi =", round(pi_excede, 4)))
 ```
 
@@ -249,28 +247,23 @@ alfa       <- 1 - confianza
 Vcritico   <- qnorm(1 - alfa/2, 0, 1)
 print(paste("Valor crítico Z al 94% de confianza:", round(Vcritico, 4)))
 
-# PM10
 E_PM10  <- 5
-n_PM10  <- (Vcritico * sigma_PM10 / E_PM10)^2
-print(paste("PM10  | sigma =", round(sigma_PM10,4), "| E =", E_PM10, "| n =", ceiling(n_PM10)))
+n_PM10  <- (Vcritico * sigma_PM10/E_PM10)^2
+print(paste("PM10  |sigma =", round(sigma_PM10,4), "| E =", E_PM10, "|n =", ceiling(n_PM10)))
 
 # PM2.5
 E_PM25  <- 1.5
-n_PM25  <- (Vcritico * sigma_PM25 / E_PM25)^2
-
-print(paste("PM2_5 | sigma =", round(sigma_PM25,4), "| E =", E_PM25, "| n =", ceiling(n_PM25)))
+n_PM25  <- (Vcritico * sigma_PM25/E_PM25)^2
+print(paste("PM2_5 |sigma =", round(sigma_PM25,4), "| E =", E_PM25, "|n =", ceiling(n_PM25)))
 
 # NO2
 E_NO2   <- 1.5
 n_NO2   <- (Vcritico * sigma_NO2  / E_NO2)^2
+print(paste("NO2   |sigma =", round(sigma_NO2, 4), "|E =", E_NO2, "|n =", ceiling(n_NO2)))
 
-print(paste("NO2   | sigma =", round(sigma_NO2, 4), "| E =", E_NO2, "| n =", ceiling(n_NO2)))
-
-# Variable cualitativa: proporcion PM2.5 > 15
 E_prop  <- 0.043
 n_prop  <- pi_excede * (1 - pi_excede) * (Vcritico / E_prop)^2
-
-print(paste("Prop. PM2.5 > 15 | pi =", round(pi_excede,4), "| E =", E_prop, "| n =", ceiling(n_prop)))
+print(paste("Prop. PM2.5>15 |pi=", round(pi_excede,4), "|E=", E_prop, "|n =", ceiling(n_prop)))
 ```
 
 ## Resumen del Tamaño de Muestra
@@ -317,9 +310,9 @@ Se pide: $P(\overline{x} > 15)$
 
 ```{r}
 # Usando Codigo 1 adaptado: media y desviacion de la media muestral
-n       <- 408
-mu_pob  <- 24.2073
-sigma   <- 15.8274
+n <- 408
+mu_pob <- 24.2073
+sigma <- 15.8274
 
 desv_xbarra <- sigma / sqrt(n)
 print(paste("Media de x_barra: mu =", mu_pob))
@@ -353,11 +346,9 @@ El **69.27%** de todos los registros de PM2.5 en Lima superan los 15 µg/m³ (l�
 La proporción muestral sigue una distribución Normal: $$p \sim N\left(\pi,\; \sqrt{\frac{\pi(1-\pi)}{n}}\right)$$
 
 ```{r}
-# Código 1 para proporciones
-n    <- 408
+n <- 408
 pi_p <-0.6927
-
-sigma_p <- sqrt(pi_p * (1 - pi_p) / n)
+sigma_p <- sqrt(pi_p * (1 - pi_p)/n)
 media_p <- pi_p
 
 print("usando Código 1, para una proporción:")
@@ -368,8 +359,8 @@ print(paste("la desviación es", round(sigma_p, 4)))
 Se pide: $P(p \leq 0.70)$
 
 ```{r}
-P_caso2 <- pnorm(0.70, media_p, sigma_p)
-print(paste("P(p <= 0.70) =", round(P_caso2, 4)))
+P_caso2<- pnorm(0.70, media_p, sigma_p)
+print(paste("P(p<=0.70) =", round(P_caso2, 4)))
 ```
 
 **Interpretación:** La probabilidad de que, en una muestra aleatoria de 408 registros, la proporción de mediciones que exceden el límite de la OMS sea a lo más del 70%, es de **62.54%**. Al ser una probabilidad moderadamente alta, existe una posibilidad significativa de que la muestra refleje niveles de contaminación críticamente elevados. Esto refuerza la evidencia de que la contaminación por PM2.5 en Lima supera de manera persistente los estándares internacionales de salud ambiental.
@@ -389,11 +380,11 @@ $$\frac{(n-1)S^2}{\sigma^2} \sim \chi^2(n-1)$$
 Se pide: $P(S^2 \leq 2500) = P\left(\chi^2(407) \leq \frac{407 \times 2500}{2170.75}\right)$
 
 ```{r}
-n_c3    <- 408
-sigma2  <- 46.5913^2
-S2_max  <- 2500
+n_c3  <- 408
+sigma2 <- 46.5913^2
+S2_max <- 2500
 
-chi2_val <- (n_c3 - 1) * S2_max / sigma2
+chi2_val <- (n_c3-1)*S2_max/sigma2
 print(paste("Valor chi-cuadrado calculado:", round(chi2_val, 4)))
 print(paste("Grados de libertad:", n_c3 - 1))
 ```
@@ -430,15 +421,12 @@ print(paste("Tamaño de la muestra:", nrow(muestra)))
 ```{r}
 # Estadísticas de la muestra
 print("Estadísticas de la muestra:")
-print(paste("PM10: media muestral =", round(mean(muestra$PM10), 4), "| s =", round(sd(muestra$PM10), 4)))
+print(paste("PM10: media muestral=", round(mean(muestra$PM10), 4), "| s =", round(sd(muestra$PM10), 4)))
+print(paste("PM2_5: media muestral=", round(mean(muestra$PM2_5), 4), "| s =", round(sd(muestra$PM2_5), 4)))
+print(paste("NO2: media muestral=", round(mean(muestra$NO2), 4), "| s =", round(sd(muestra$NO2), 4)))
 
-print(paste("PM2_5: media muestral =", round(mean(muestra$PM2_5), 4), "| s =", round(sd(muestra$PM2_5), 4)))
-
-print(paste("NO2: media muestral =", round(mean(muestra$NO2), 4), "| s =", round(sd(muestra$NO2), 4)))
-
-# Proporción muestral: registros con PM2.5 > 15
-p_muestral <- mean(muestra$PM2_5 > 15)
-print(paste("Proporción muestral PM2.5 > 15:", round(p_muestral, 4)))
+p_muestral <- mean(muestra$PM2_5>15)
+print(paste("Proporción muestral PM2.5>15:", round(p_muestral, 4)))
 ```
 
 ------------------------------------------------------------------------
@@ -454,7 +442,7 @@ La desviación estándar poblacional es $\sigma_{PM2.5} = 15.8274$ µg/m³ (calc
 **1) Ingreso de datos:**
 
 ```{r}
-n_ic1          <- nrow(muestra)
+n_ic1 <- nrow(muestra)
 media_muestral <- mean(muestra$PM2_5)
 sigma_conocida <- 15.8274   # desviacion poblacional
 
@@ -494,7 +482,7 @@ Se construye un IC al 94% para la **proporción poblacional (**$\pi$) de registr
 **1) Ingreso de datos:**
 
 ```{r}
-p_ic2 <- mean(muestra$PM2_5 > 15)   # proporción muestral
+p_ic2 <- mean(muestra$PM2_5 > 15)#proporción muestral
 n_ic2 <- nrow(muestra)
 nc_ic2 <- 0.94
 
