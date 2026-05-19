@@ -328,14 +328,14 @@ print(paste("Desviación de x_barra:", round(desv_xbarra, 4)))
 
 ```{r}
 P_caso1 <- pnorm(15, mu_pob, desv_xbarra, lower.tail = FALSE)
-cat("P(x_barra > 15) =", round(P_caso1, 4))
+print(paste("P(x_barra > 15) =", round(P_caso1, 4)))
 ```
 
 ¿Cuál es la probabilidad de que la **concentración media de PM2.5 en esa muestra** supere los **25 µg/m³**?
 
 ```{r}
 P_caso1 <- pnorm(25, mu_pob, desv_xbarra, lower.tail = FALSE)
-cat("P(x_barra > 25) =", round(P_caso1, 4))
+print(paste("P(x_barra > 25) =", round(P_caso1, 4)))
 ```
 
 **Interpretación:** Existe una probabilidad del **15.70%** de que la concentración media de PM2.5 en una muestra de **408** registros supere los $25\text{ }\mu\text{g/m}^3$. Al contrastar esto con el hecho de que es matemáticamente seguro que cualquier muestra superará el límite anual de la OMS ($P(\bar{x} > 15) = 1$), se evidencia la gravedad de la situación en Lima Metropolitana: el aire no solo incumple siempre los estándares internacionales de salud, sino que mantiene una tendencia constante a alcanzar picos de contaminación aún más severos.
@@ -403,9 +403,7 @@ P_caso3 <- pchisq(chi2_val, df = n_c3 - 1)
 print(paste("P(S^2 <= 2500) =", round(P_caso3, 4)))
 ```
 
-**Interpretación:** La probabilidad de que la varianza muestral de PM10 sea como máximo 2500 (µg/m³)² es de **`r round(P_caso3*100,2)`%**. Dado que la varianza poblacional ya es 2170.75, es razonablemente probable que una muestra produzca una varianza similar o inferior a ese umbral, lo cual es consistente con la alta dispersión inherente de las mediciones de PM10 en Lima.
-
-La probabilidad de que la varianza muestral de PM10 sea como máximo de $2500 \text{ }(\mu\text{g/m}^3)^2$ es de **98.15%**. Dado que la varianza poblacional de referencia es de $2170.75 \text{ }(\mu\text{g/m}^3)^2$, este resultado indica que es altamente probable que cualquier muestra aleatoria presente una dispersión similar o inferior a dicho umbral. Esto demuestra que, a pesar de la alta variabilidad típica del PM10 en Lima, los resultados de las muestras son bastante estables y se mantienen dentro de lo previsto históricamente.
+**Interpretación:** La probabilidad de que la varianza muestral de PM10 sea como máximo de $2500 \text{ }(\mu\text{g/m}^3)^2$ es de **98.15%**. Dado que la varianza poblacional de referencia es de $2170.75 \text{ }(\mu\text{g/m}^3)^2$, este resultado indica que es altamente probable que cualquier muestra aleatoria presente una dispersión similar o inferior a dicho umbral. Esto demuestra que, a pesar de la alta variabilidad típica del PM10 en Lima, los resultados de las muestras son bastante estables y se mantienen dentro de lo previsto históricamente.
 
 ------------------------------------------------------------------------
 
